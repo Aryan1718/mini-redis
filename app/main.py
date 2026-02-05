@@ -4,6 +4,7 @@ import time
 
 DATA_STORE = {}
 EXPIRY_STORE = {}
+SERVER_CONFIG = {}
 
 class RESPParser:
     def __init__(self, data):
@@ -75,12 +76,32 @@ def encode_simple_string(s):
 def encode_error(msg):
     return f"-ERR {msg}\r\n".encode()
 
+def encode_array(arr):
+    res = f"*{len(arr)}\r\n".encode()
+    for item in arr:
+         res += encode_bulk_string(item)
+    return res
+
 def handle_command(args):
     if not args:
         return encode_error("no command")
     
     cmd = args[0].upper()
     
+    if cmd == "CONFIG":
+        if len(args) < 3 or args[1].upper() != "GET":
+            return encode_error("commands other than CONFIG GET are not supported")
+        
+        param = args[2]
+        value = SERVER_CONFIG.get(param)
+        
+        if value is None:
+             return encode_array([]) 
+             
+        # CONFIG GET returns a 2-element array: [param_name, param_value]
+        # We need to compose the array manually or use a helper
+        return f"*2\r\n${len(param)}\r\n{param}\r\n${len(value)}\r\n{value}\r\n".encode()
+
     if cmd == "PING":
         return encode_simple_string("PONG")
     
@@ -128,11 +149,46 @@ def handle_command(args):
                 
         val = DATA_STORE.get(key)
         return encode_bulk_string(val)
+        
+    if cmd == "KEYS":
+        if len(args) < 2:
+            return encode_error("wrong number of arguments for 'keys' command")
+        pattern = args[1]
+        keys = []
+        if pattern == "*":
+            keys = list(DATA_STORE.keys())
+        return encode_array(keys)
 
     return encode_simple_string("PONG") # Fallback for unknown commands in early stages or return error
 
 def main():
     print("Logs from your program will appear here!")
+    
+    # Default Configuration
+    SERVER_CONFIG["dir"] = "."
+    SERVER_CONFIG["dbfilename"] = "dump.rdb"
+    
+    # Parse CLI arguments
+    import sys
+    args = sys.argv[1:]
+    for i in range(len(args)):
+        if args[i] == "--dir" and i + 1 < len(args):
+            SERVER_CONFIG["dir"] = args[i+1]
+        elif args[i] == "--dbfilename" and i + 1 < len(args):
+            SERVER_CONFIG["dbfilename"] = args[i+1]
+            
+    # Load RDB file if exists
+    import os
+    from app.rdb_parser import load_rdb
+    
+    db_path = os.path.join(SERVER_CONFIG["dir"], SERVER_CONFIG["dbfilename"])
+    if os.path.exists(db_path):
+        print(f"Loading RDB file from {db_path}")
+        loaded_data, loaded_expiry = load_rdb(db_path)
+        DATA_STORE.update(loaded_data)
+        EXPIRY_STORE.update(loaded_expiry)
+        print(f"Loaded {len(loaded_data)} keys")
+            
     server_socket = socket.create_server(("localhost", 6379), reuse_port=False)
     
     while True:
