@@ -11,7 +11,10 @@ The server successfully binds to a port, accepts multiple concurrent TCP connect
 - **Concurrency**: Multi-threaded architecture to handle multiple clients simultaneously.
 - **Redis Protocol (RESP)**:
     - [x] Responds to `PING` with `+PONG`.
-    - [ ] Parsing RESP arrays (Coming in Phase 2).
+    - [x] Full RESP Parsing (Arrays, Bulk Strings).
+- **Storage Engine**:
+    - [x] In-memory Key-Value Store (`SET`, `GET`).
+    - [x] Key Expiration (`PX` argument).
 - **Cross-Platform**: Tuned to work on Windows and Linux (socket reuse options handled).
 
 ## 🛠️ How to Run
@@ -42,8 +45,8 @@ PONG
 
 ## 🗺️ Roadmap
 - [x] **Phase 1**: Networking foundation & Concurrency (Threaded Server)
-- [ ] **Phase 2**: Command Parsing (`ECHO`, `SET`, `GET`)
-- [ ] **Phase 3**: Key Expiry (`PX` argument) & Storage Engine
+- [x] **Phase 2**: Command Parsing (`ECHO`, `SET`, `GET`) & Storage Engine
+- [x] **Phase 3**: Key Expiry (`PX` argument)
 - [ ] **Phase 4**: Persistence (RDB) & Advanced Features
 
 ## 🤝 Contributing
