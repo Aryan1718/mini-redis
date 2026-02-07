@@ -159,3 +159,63 @@ def read_string(data, pos):
     pos += length
     
     return val, pos
+
+def save_rdb(filename, data_store, expiry_store):
+    """
+    Saves the current state to an RDB file.
+    """
+    with open(filename, "wb") as f:
+        # Header
+        f.write(b"REDIS0009")
+        
+        # Database Selection (DB 0)
+        f.write(b"\xFE\x00")
+        
+        # Iterate through data
+        for key, value in data_store.items():
+            # Check expiry
+            if key in expiry_store:
+                expiry = expiry_store[key]
+                if time.time() * 1000 > expiry:
+                    continue # Skip expired keys
+                
+                # Write Expire Time (ms)
+                f.write(b"\xFC")
+                f.write(struct.pack("<Q", int(expiry)))
+                
+            # Value Type (0 = String)
+            f.write(b"\x00")
+            
+            # Key
+            f.write(encode_string(key))
+            
+            # Value
+            f.write(encode_string(value))
+            
+        # EOF
+        f.write(b"\xFF")
+        
+        # Checksum (8 bytes) - using 0 as placeholder
+        f.write(b"\x00" * 8)
+        
+def encode_length(length):
+    """
+    Encodes a length into RDB format bytes.
+    """
+    if length < 64:
+        # 00xxxxxx
+        return struct.pack("B", length)
+    elif length < 16384:
+        # 01xxxxxx
+        return struct.pack(">H", length | 0x4000)
+    else:
+        # 10xxxxxx + 4 bytes
+        return b"\x80" + struct.pack(">I", length)
+
+def encode_string(s):
+    """
+    Encodes a string into RDB format bytes.
+    """
+    encoded = s.encode()
+    length = len(encoded)
+    return encode_length(length) + encoded

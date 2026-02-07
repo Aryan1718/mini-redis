@@ -159,6 +159,17 @@ def handle_command(args):
             keys = list(DATA_STORE.keys())
         return encode_array(keys)
 
+    if cmd == "SAVE":
+        import os
+        from app.rdb_parser import save_rdb
+        db_path = os.path.join(SERVER_CONFIG.get("dir", "."), SERVER_CONFIG.get("dbfilename", "dump.rdb"))
+        try:
+             save_rdb(db_path, DATA_STORE, EXPIRY_STORE)
+             return encode_simple_string("OK")
+        except Exception as e:
+             return encode_error(str(e))
+
+
     return encode_simple_string("PONG") # Fallback for unknown commands in early stages or return error
 
 def main():
@@ -179,7 +190,10 @@ def main():
             
     # Load RDB file if exists
     import os
-    from app.rdb_parser import load_rdb
+    # Load RDB file if exists
+    import os
+    from app.rdb_parser import load_rdb, save_rdb
+    
     
     db_path = os.path.join(SERVER_CONFIG["dir"], SERVER_CONFIG["dbfilename"])
     if os.path.exists(db_path):

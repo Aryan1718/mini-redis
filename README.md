@@ -111,7 +111,8 @@ sequenceDiagram
 - [x] **Phase 2**: Command Parsing (`ECHO`, `SET`, `GET`) & Storage Engine
 - [x] **Phase 3**: Key Expiry (`PX` argument)
 - [x] **Phase 4**: Persistence (RDB Loading, `CONFIG GET`, `KEYS *`)
-- [ ] **Phase 5**: Advanced Features (RDB Saving, Replication)
+- [x] **Phase 5**: Advanced Features (RDB Saving)
+- [ ] **Phase 6**: Replication
 
 ## 🤝 Contributing
 This is an educational project. Feel free to fork and build your own!
